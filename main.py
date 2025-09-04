@@ -1,9 +1,7 @@
 from ortools.sat.python import cp_model
 
-
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
-
 
 _DAY_START: int = 9
 _DAY_END: int = 17
@@ -17,7 +15,6 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
         managers: list[str],
         day_start: int,
         day_end: int,
-        limit: int = 1,
     ):
         cp_model.CpSolverSolutionCallback.__init__(self)
         self._meetings = meetings
@@ -26,29 +23,30 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
         self._day_start: int = day_start
         self._day_end: int = day_end
 
-        self._solution_count: int = 0
-        self._limit: int = limit
-
     def on_solution_callback(self):
-        self._solution_count += 1
-        print(f"Solution {self._solution_count}:")
+        scheduled_volunteers: set[str] = set()
 
         for managers in self._managers:
-            print(f"  Manager: {managers}")
+            print(f"Manager: {managers}")
 
             for start_time in range(self._day_start, self._day_end):
                 is_booked: bool = False
                 for volunteer in self._volunteers:
                     if self.value(self._meetings[(volunteer, managers, start_time)]):
                         is_booked = True
-                        print(f"    {start_time:02d}:00 - {volunteer}")
+                        print(f"  {start_time:02d}:00 - {volunteer}")
+                        scheduled_volunteers.add(volunteer)
 
                 if not is_booked:
-                    print(f"    {start_time:02d}:00 - xxxx")
+                    print(f"  {start_time:02d}:00 - xxxx")
 
-        if self._solution_count >= self._limit:
-            print(f"Stop search after {self._limit} solutions")
-            self.stop_search()
+        unscheduled_volunteers: list[str] = sorted(
+            set(self._volunteers) - scheduled_volunteers
+        )
+        if len(unscheduled_volunteers) > 0:
+            print(f"Failed to schedule: {', '.join(unscheduled_volunteers)}")
+        else:
+            print(f"ALL VOLUNTEERS SCHEDULED!")
 
 
 def main() -> None:
@@ -60,6 +58,10 @@ def main() -> None:
         "manager1": [
             TimeSlot(start_time=9, end_time=11),
             TimeSlot(start_time=12, end_time=15),
+        ],
+        "manager2": [
+            TimeSlot(start_time=10, end_time=12),
+            TimeSlot(start_time=14, end_time=16),
         ],
     }
 
@@ -110,6 +112,26 @@ def main() -> None:
             TimeSlot(start_time=13, end_time=14),
             TimeSlot(start_time=15, end_time=17),
             TimeSlot(start_time=18, end_time=20),
+        ],
+        "volunteer10": [
+            TimeSlot(start_time=8, end_time=10),
+            TimeSlot(start_time=17, end_time=19),
+        ],
+        "volunteer11": [
+            TimeSlot(start_time=11, end_time=13),
+            TimeSlot(start_time=15, end_time=16),
+        ],
+        "volunteer12": [
+            TimeSlot(start_time=10, end_time=12),
+            TimeSlot(start_time=18, end_time=20),
+        ],
+        "volunteer13": [
+            TimeSlot(start_time=9, end_time=11),
+            TimeSlot(start_time=13, end_time=15),
+        ],
+        "volunteer14": [
+            TimeSlot(start_time=14, end_time=16),
+            TimeSlot(start_time=20, end_time=22),
         ],
     }
 
@@ -174,9 +196,10 @@ def main() -> None:
         list(manager_busy.keys()),
         _DAY_START,
         _DAY_END,
-        limit=10,
     )
-    solver.Solve(model, solution_printer)
+    res = solver.Solve(model, solution_printer)
+
+    print(f"Solution status: {solver.StatusName(res)}")
 
 
 if __name__ == "__main__":
