@@ -1,19 +1,9 @@
-import logging
-from collections import defaultdict
-
 from ortools.sat.python import cp_model
 
-from models.meeting import Meeting
+
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
-from services.scheduler import Scheduler
-from services.selector import (
-    LeastAvailableSelector,
-    Selector,
-    SequentialSelector,
-    SingleManagerSelector,
-    SingleSlotSelector,
-)
+
 
 _DAY_START: int = 9
 _DAY_END: int = 17
