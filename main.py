@@ -1,6 +1,7 @@
 from models.meeting import Meeting
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
+from services.scheduler import Scheduler
 
 
 def main() -> None:
@@ -62,13 +63,16 @@ def main() -> None:
     matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
         day_start_time=8, day_end_time=17
     )
-    availability_map: dict[str, dict[str, list[TimeSlot]]] = {
-        volunteer: {
-            manager: matcher.get_availability(manager_slots, volunteer_slots)
-            for manager, manager_slots in manager_busy.items()
-        }
-        for volunteer, volunteer_slots in volunteer_busy.items()
-    }
+
+    scheduler: Scheduler = Scheduler(matcher=matcher)
+    schedule: list[Meeting] = scheduler.schedule(
+        manager_busy=manager_busy, volunteer_busy=volunteer_busy
+    )
+
+    for volunteer, manager, (start_time, end_time) in schedule:
+        print(
+            f"Volunteer: {volunteer}, Manager: {manager}, Time: {start_time} --> {end_time}"
+        )
 
 
 if __name__ == "__main__":
