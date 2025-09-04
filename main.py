@@ -183,6 +183,7 @@ def main() -> None:
         ],
     }
 
+    # Create the optimization model
     model: cp_model.CpModel = cp_model.CpModel()
     meetings: dict[tuple[str, str, int], cp_model.BoolVarT] = {}
 
@@ -207,6 +208,7 @@ def main() -> None:
             for start_time in range(_DAY_START, _DAY_END)
         )
 
+    # Calculate meeting options
     availability: dict[str, dict[str, dict[int, int]]] = {
         volunteer: {
             mgr: {slot_start: 0 for slot_start in range(_DAY_START, _DAY_END)}
@@ -225,6 +227,7 @@ def main() -> None:
             for slot_start, _ in available_slots:
                 availability[volunteer][manager][slot_start] = 1
 
+    # Define the objective function
     model.Maximize(
         sum(
             availability[volunteer][manager][start_time]
@@ -235,9 +238,11 @@ def main() -> None:
         )
     )
 
+    # Set up the solver
     solver: cp_model.CpSolver = cp_model.CpSolver()
     solver.parameters.linearization_level = 0
 
+    # Solve and print the result
     solution_printer: SolutionPrinter = SolutionPrinter(
         meetings,
         list(volunteer_busy.keys()),
