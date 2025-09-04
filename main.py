@@ -1,7 +1,7 @@
+import logging
 from collections import defaultdict
 
 from ortools.sat.python import cp_model
-import logging
 
 from models.meeting import Meeting
 from models.time_slot import TimeSlot
@@ -147,9 +147,28 @@ def main() -> None:
             for start_time in range(_DAY_START, _DAY_END)
         )
 
+    availability: dict[str, dict[str, dict[int, int]]] = {
+        volunteer: {
+            mgr: {slot_start: 0 for slot_start in range(_DAY_START, _DAY_END)}
+            for mgr in manager_busy.keys()
+        }
+        for volunteer in volunteer_busy.keys()
+    }
+    for volunteer, volunteer_slots in volunteer_busy.items():
+        for manager, manager_slots in manager_busy.items():
+            matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
+                _DAY_START, _DAY_END
+            )
+            available_slots: list[TimeSlot] = matcher.get_availability(
+                manager_slots, volunteer_slots
+            )
+            for slot_start, _ in available_slots:
+                availability[volunteer][manager][slot_start] = 1
+
     model.Maximize(
         sum(
-            meetings[(volunteer, manager, start_time)]
+            availability[volunteer][manager][start_time]
+            * meetings[(volunteer, manager, start_time)]
             for volunteer in volunteer_busy.keys()
             for manager in manager_busy.keys()
             for start_time in range(_DAY_START, _DAY_END)
@@ -167,7 +186,7 @@ def main() -> None:
         _DAY_END,
         limit=10,
     )
-    print(solver.solve(model, solution_printer))
+    solver.Solve(model, solution_printer)
 
 
 if __name__ == "__main__":
