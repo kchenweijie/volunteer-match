@@ -1,7 +1,12 @@
+from collections import defaultdict
+
 from models.meeting import Meeting
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
 from services.scheduler import Scheduler
+
+_DAY_START: int = 9
+_DAY_END: int = 17
 
 
 def main() -> None:
@@ -12,7 +17,7 @@ def main() -> None:
         ],
         "manager1": [
             TimeSlot(start_time=9, end_time=11),
-            TimeSlot(start_time=12, end_time=14),
+            TimeSlot(start_time=12, end_time=15),
         ],
     }
 
@@ -67,7 +72,7 @@ def main() -> None:
     }
 
     matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
-        day_start_time=12, day_end_time=17
+        day_start_time=_DAY_START, day_end_time=_DAY_END
     )
 
     scheduler: Scheduler = Scheduler(matcher=matcher)
@@ -75,10 +80,20 @@ def main() -> None:
         manager_busy=manager_busy, volunteer_busy=volunteer_busy
     )
 
-    for volunteer, manager, (start_time, end_time) in schedule:
-        print(
-            f"Volunteer: {volunteer}, Manager: {manager}, Time: {start_time} --> {end_time}"
-        )
+    print(f"{len(schedule)} volunteers scheduled.")
+
+    manager_schedules: defaultdict[str, dict[int, str]] = defaultdict(dict)
+    for volunteer, manager, (start_time, _) in schedule:
+        manager_schedules[manager][start_time] = volunteer
+
+    for manager, meetings in manager_schedules.items():
+        print(f"Manager: {manager}")
+
+        for slot_time in range(_DAY_START, _DAY_END):
+            if slot_time in meetings:
+                print(f"  {slot_time:02d}00: {meetings[slot_time]}")
+            else:
+                print(f"  {slot_time:02d}00: ---")
 
 
 if __name__ == "__main__":
