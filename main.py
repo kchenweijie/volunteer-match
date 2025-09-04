@@ -1,5 +1,8 @@
 from collections import defaultdict
 
+from ortools.sat.python import cp_model
+import logging
+
 from models.meeting import Meeting
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
@@ -14,6 +17,48 @@ from services.selector import (
 
 _DAY_START: int = 9
 _DAY_END: int = 17
+
+
+class SolutionPrinter(cp_model.CpSolverSolutionCallback):
+    def __init__(
+        self,
+        meetings,
+        volunteers: list[str],
+        managers: list[str],
+        day_start: int,
+        day_end: int,
+        limit: int = 1,
+    ):
+        cp_model.CpSolverSolutionCallback.__init__(self)
+        self._meetings = meetings
+        self._volunteers: list[str] = volunteers
+        self._managers: list[str] = managers
+        self._day_start: int = day_start
+        self._day_end: int = day_end
+
+        self._solution_count: int = 0
+        self._limit: int = limit
+
+    def on_solution_callback(self):
+        self._solution_count += 1
+        print(f"Solution {self._solution_count}:")
+
+        for managers in self._managers:
+            print(f"  Manager: {managers}")
+
+            for start_time in range(self._day_start, self._day_end):
+                is_booked: bool = False
+                for volunteer in self._volunteers:
+                    if self.value(self._meetings[(volunteer, managers, start_time)]):
+                        is_booked = True
+                        print(f"    {start_time:02d}:00 - {volunteer}")
+
+                if not is_booked:
+                    print(f"    {start_time:02d}:00 - xxxx")
+
+        if self._solution_count >= self._limit:
+            print(f"Stop search after {self._limit} solutions")
+            self.stop_search()
 
 
 def main() -> None:
@@ -78,32 +123,51 @@ def main() -> None:
         ],
     }
 
-    volunteer_selector: Selector = SequentialSelector(
-        [SingleSlotSelector(), SingleManagerSelector(), LeastAvailableSelector()]
+    model: cp_model.CpModel = cp_model.CpModel()
+    meetings: dict[tuple[str, str, int], cp_model.BoolVarT] = {}
+
+    for volunteer in volunteer_busy.keys():
+        for manager in manager_busy.keys():
+            for start_time in range(_DAY_START, _DAY_END):
+                meetings[(volunteer, manager, start_time)] = model.NewBoolVar(
+                    f"meeting_{volunteer}_{manager}_{start_time}"
+                )
+
+    for manager in manager_busy.keys():
+        for start_time in range(_DAY_START, _DAY_END):
+            model.add_at_most_one(
+                meetings[(volunteer, manager, start_time)]
+                for volunteer in volunteer_busy.keys()
+            )
+
+    for volunteer in volunteer_busy.keys():
+        model.add_at_most_one(
+            meetings[(volunteer, manager, start_time)]
+            for manager in manager_busy.keys()
+            for start_time in range(_DAY_START, _DAY_END)
+        )
+
+    model.Maximize(
+        sum(
+            meetings[(volunteer, manager, start_time)]
+            for volunteer in volunteer_busy.keys()
+            for manager in manager_busy.keys()
+            for start_time in range(_DAY_START, _DAY_END)
+        )
     )
-    matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
-        day_start_time=_DAY_START, day_end_time=_DAY_END
+
+    solver: cp_model.CpSolver = cp_model.CpSolver()
+    solver.parameters.linearization_level = 0
+
+    solution_printer: SolutionPrinter = SolutionPrinter(
+        meetings,
+        list(volunteer_busy.keys()),
+        list(manager_busy.keys()),
+        _DAY_START,
+        _DAY_END,
+        limit=10,
     )
-
-    scheduler: Scheduler = Scheduler(volunteer_selector, matcher)
-    schedule: list[Meeting] = scheduler.schedule(
-        manager_busy=manager_busy, volunteer_busy=volunteer_busy
-    )
-
-    print(f"{len(schedule)} volunteers scheduled.")
-
-    manager_schedules: defaultdict[str, dict[int, str]] = defaultdict(dict)
-    for volunteer, manager, (start_time, _) in schedule:
-        manager_schedules[manager][start_time] = volunteer
-
-    for manager, meetings in manager_schedules.items():
-        print(f"Manager: {manager}")
-
-        for slot_time in range(_DAY_START, _DAY_END):
-            if slot_time in meetings:
-                print(f"  {slot_time:02d}00: {meetings[slot_time]}")
-            else:
-                print(f"  {slot_time:02d}00: ---")
+    print(solver.solve(model, solution_printer))
 
 
 if __name__ == "__main__":
