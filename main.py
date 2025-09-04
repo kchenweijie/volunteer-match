@@ -62,13 +62,13 @@ def main() -> None:
     matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
         day_start_time=8, day_end_time=17
     )
-
-    print(
-        matcher.get_availability(
-            manager_busy=manager_busy["manager0"],
-            volunteer_busy=volunteer_busy["volunteer0"],
-        )
-    )
+    availability_map: dict[str, dict[str, list[TimeSlot]]] = {
+        volunteer: {
+            manager: matcher.get_availability(manager_slots, volunteer_slots)
+            for manager, manager_slots in manager_busy.items()
+        }
+        for volunteer, volunteer_slots in volunteer_busy.items()
+    }
 
 
 if __name__ == "__main__":
