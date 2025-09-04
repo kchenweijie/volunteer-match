@@ -63,6 +63,14 @@ def main() -> None:
             TimeSlot(start_time=10, end_time=12),
             TimeSlot(start_time=14, end_time=16),
         ],
+        "manager3": [
+            TimeSlot(start_time=11, end_time=13),
+            TimeSlot(start_time=16, end_time=18),
+        ],
+        "manager4": [
+            TimeSlot(start_time=13, end_time=15),
+            TimeSlot(start_time=17, end_time=19),
+        ],
     }
 
     volunteer_busy: dict[str, list[TimeSlot]] = {
@@ -132,6 +140,46 @@ def main() -> None:
         "volunteer14": [
             TimeSlot(start_time=14, end_time=16),
             TimeSlot(start_time=20, end_time=22),
+        ],
+        "volunteer15": [
+            TimeSlot(start_time=8, end_time=9),
+            TimeSlot(start_time=15, end_time=17),
+        ],
+        "volunteer16": [
+            TimeSlot(start_time=10, end_time=12),
+            TimeSlot(start_time=18, end_time=19),
+        ],
+        "volunteer17": [
+            TimeSlot(start_time=9, end_time=10),
+            TimeSlot(start_time=13, end_time=14),
+        ],
+        "volunteer18": [
+            TimeSlot(start_time=11, end_time=13),
+            TimeSlot(start_time=16, end_time=18),
+        ],
+        "volunteer19": [
+            TimeSlot(start_time=12, end_time=14),
+            TimeSlot(start_time=19, end_time=21),
+        ],
+        "volunteer20": [
+            TimeSlot(start_time=14, end_time=16),
+            TimeSlot(start_time=20, end_time=22),
+        ],
+        "volunteer21": [
+            TimeSlot(start_time=15, end_time=17),
+            TimeSlot(start_time=21, end_time=23),
+        ],
+        "volunteer22": [
+            TimeSlot(start_time=8, end_time=10),
+            TimeSlot(start_time=17, end_time=19),
+        ],
+        "volunteer23": [
+            TimeSlot(start_time=9, end_time=11),
+            TimeSlot(start_time=18, end_time=20),
+        ],
+        "volunteer24": [
+            TimeSlot(start_time=10, end_time=12),
+            TimeSlot(start_time=13, end_time=15),
         ],
     }
 
