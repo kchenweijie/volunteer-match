@@ -4,23 +4,15 @@ from models.meeting import Meeting
 from models.time_slot import TimeSlot
 
 from .availability import AvailabilityMatcher
-from .selector import (
-    LeastAvailableSelector,
-    Selector,
-    SingleManagerSelector,
-    SingleSlotSelector,
-)
+from .selector import Selector
 
 
 class Scheduler:
 
-    _SELECTORS: list[Selector] = [
-        SingleSlotSelector(),
-        SingleManagerSelector(),
-        LeastAvailableSelector(),
-    ]
-
-    def __init__(self, matcher: AvailabilityMatcher) -> None:
+    def __init__(
+        self, volunteer_selector: Selector, matcher: AvailabilityMatcher
+    ) -> None:
+        self._volunteer_selector: Selector = volunteer_selector
         self._matcher: AvailabilityMatcher = matcher
 
     def schedule(
@@ -61,7 +53,7 @@ class Scheduler:
         ):
             return meetings
 
-        volunteer: str | None = self._select_volunteer(availability_map)
+        volunteer: str | None = self._volunteer_selector.select(availability_map)
 
         if volunteer is None:
             return meetings
@@ -99,14 +91,3 @@ class Scheduler:
                     longest_subbranch = subbranch
 
         return longest_subbranch
-
-    def _select_volunteer(
-        self,
-        availability_map: dict[str, dict[str, list[TimeSlot]]],
-    ) -> str | None:
-        for selector in self._SELECTORS:
-            volunteer: str | None = selector.select(availability_map)
-            if volunteer is not None:
-                return volunteer
-
-        return None

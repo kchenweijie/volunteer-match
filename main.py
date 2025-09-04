@@ -4,6 +4,13 @@ from models.meeting import Meeting
 from models.time_slot import TimeSlot
 from services.availability import AvailabilityMatcher, ShapelyAvailabilityMatcher
 from services.scheduler import Scheduler
+from services.selector import (
+    LeastAvailableSelector,
+    Selector,
+    SequentialSelector,
+    SingleManagerSelector,
+    SingleSlotSelector,
+)
 
 _DAY_START: int = 9
 _DAY_END: int = 17
@@ -71,11 +78,14 @@ def main() -> None:
         ],
     }
 
+    volunteer_selector: Selector = SequentialSelector(
+        [SingleSlotSelector(), SingleManagerSelector(), LeastAvailableSelector()]
+    )
     matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
         day_start_time=_DAY_START, day_end_time=_DAY_END
     )
 
-    scheduler: Scheduler = Scheduler(matcher=matcher)
+    scheduler: Scheduler = Scheduler(volunteer_selector, matcher)
     schedule: list[Meeting] = scheduler.schedule(
         manager_busy=manager_busy, volunteer_busy=volunteer_busy
     )
