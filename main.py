@@ -40,28 +40,34 @@ def main() -> None:
             TimeSlot(start_time=15, end_time=17),
         ],
         "volunteer5": [
-            TimeSlot(start_time=3, end_time=5),
+            TimeSlot(start_time=2, end_time=4),
         ],
         "volunteer6": [
-            TimeSlot(start_time=6, end_time=8),
-            TimeSlot(start_time=15, end_time=16),
+            TimeSlot(start_time=8, end_time=9),
+            TimeSlot(start_time=12, end_time=13),
         ],
         "volunteer7": [
-            TimeSlot(start_time=10, end_time=12),
-            TimeSlot(start_time=20, end_time=23),
+            TimeSlot(start_time=5, end_time=7),
+            TimeSlot(start_time=14, end_time=15),
+            TimeSlot(start_time=22, end_time=23),
         ],
         "volunteer8": [
-            TimeSlot(start_time=0, end_time=1),
-            TimeSlot(start_time=13, end_time=15),
+            TimeSlot(start_time=0, end_time=3),
+            TimeSlot(start_time=10, end_time=12),
+            TimeSlot(start_time=16, end_time=18),
+            TimeSlot(start_time=20, end_time=21),
         ],
         "volunteer9": [
-            TimeSlot(start_time=17, end_time=19),
-            TimeSlot(start_time=21, end_time=23),
+            TimeSlot(start_time=7, end_time=8),
+            TimeSlot(start_time=9, end_time=11),
+            TimeSlot(start_time=13, end_time=14),
+            TimeSlot(start_time=15, end_time=17),
+            TimeSlot(start_time=18, end_time=20),
         ],
     }
 
     matcher: AvailabilityMatcher = ShapelyAvailabilityMatcher(
-        day_start_time=8, day_end_time=17
+        day_start_time=12, day_end_time=17
     )
 
     scheduler: Scheduler = Scheduler(matcher=matcher)

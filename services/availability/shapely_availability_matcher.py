@@ -24,6 +24,9 @@ class ShapelyAvailabilityMatcher(AvailabilityMatcher):
             busy: LineString = LineString([(slot.start_time, 0), (slot.end_time, 0)])
             available = available.difference(busy)
 
+        if available.length == 0:
+            return []
+
         if isinstance(available, LineString):
             available_mls: MultiLineString = MultiLineString([available])
         elif isinstance(available, MultiLineString):
